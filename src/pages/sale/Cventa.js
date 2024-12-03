@@ -10,7 +10,7 @@ function Cventa() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userRole, setUserRole] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal
-  const [selectedOrder, setSelectedOrder] = useState(null); // Estado para los detalles de la orden
+  const [selectedOrder, setSelectedOrder] = useState({ productos: [] });
   const navigate = useNavigate();
 
   // UseEffect para obtener los datos iniciales de la API
@@ -56,10 +56,10 @@ function Cventa() {
   //   setIsModalOpen(true);  // Abrir el modal
   // };
   const handleViewDetails = (order) => {
-  console.log("Orden seleccionada", order);  // Asegúrate de que 'order.productos' existe
-  setSelectedOrder(order);  // Establecer la orden seleccionada
-  setIsModalOpen(true);  // Abrir el modal
-};
+    console.log("Orden seleccionada", order);  // Asegúrate de que 'order.productos' existe
+    setSelectedOrder(order);  // Establecer la orden seleccionada
+    setIsModalOpen(true);  // Abrir el modal
+  };
 
   // Cerrar el modal
   const handleCloseModal = () => {
@@ -144,22 +144,16 @@ function Cventa() {
               </tr>
             </thead>
             <tbody>
-              // {selectedOrder.productos && selectedOrder.productos.map((product, index) => (
-              //   <tr key={index}>
-              //     <td className="px-4 py-2 border">{product.nombre}</td>
-              //     <td className="px-4 py-2 border">${product.precio_unitario.toFixed(2)}</td>
-              //     <td className="px-4 py-2 border">{product.cantidad}</td>
-              //     <td className="px-4 py-2 border">${product.subtotal}</td>
-              //   </tr>
-              // ))}
-{selectedOrder.productos && selectedOrder.productos.map((product, index) => (
-  <tr key={index}>
-    <td className="px-4 py-2 border">{product.nombre}</td>
-    <td className="px-4 py-2 border">${parseFloat(product.precio_unitario).toFixed(2)}</td>
-    <td className="px-4 py-2 border">{product.cantidad}</td>
-    <td className="px-4 py-2 border">${parseFloat(product.subtotal).toFixed(2)}</td>
-  </tr>
-))}
+              {
+                selectedOrder.productos && selectedOrder.productos.map((product, index) => (
+                  <tr key={index}>
+                    <td className="px-4 py-2 border">{product.nombre}</td>
+                    <td className="px-4 py-2 border">${parseFloat(product.precio_unitario).toFixed(2)}</td>
+                    <td className="px-4 py-2 border">{product.cantidad}</td>
+                    <td className="px-4 py-2 border">${parseFloat(product.subtotal).toFixed(2)}</td>
+                  </tr>
+                ))
+              }
 
             </tbody>
           </table>

@@ -87,7 +87,7 @@ const UserProfile = () => {
             ...prevState,
             [name]: value,
         }));
-        
+
         // Clear specific validation error when user starts typing
         if (validationErrors[name]) {
             setValidationErrors((prev) => ({
@@ -99,41 +99,70 @@ const UserProfile = () => {
 
     const validateForm = () => {
         const errors = {};
-        
-        // Validate Telefono (cannot be empty)
-        if (!formData.Telefono || formData.Telefono.trim() === '') {
-            errors.Telefono = 'El teléfono es obligatorio';
-        }
+        let errorMessage = 'No se puede enviar el formulario. Por favor, corrija los siguientes errores:\n\n';
 
-        // Validate Correo (cannot be empty and must be a valid email)
+        // Email validation with more strict regex
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!formData.Correo || formData.Correo.trim() === '') {
             errors.Correo = 'El correo electrónico es obligatorio';
-        } else if (!/\S+@\S+\.\S+/.test(formData.Correo)) {
-            errors.Correo = 'Formato de correo electrónico inválido';
+            errorMessage += '• El correo electrónico no puede estar vacío\n';
+        } else if (!emailRegex.test(formData.Correo)) {
+            errors.Correo = 'Ingrese un correo electrónico válido';
+            errorMessage += '• Ingrese un correo electrónico válido\n';
         }
 
-        // Validate Direccion (cannot be empty)
+        // Phone validation (Colombian phone number format)
+        const phoneRegex = /^(3\d{9}|[1-2]\d{9}|[4-9]\d{9})$/;
+        if (!formData.Telefono || formData.Telefono.trim() === '') {
+            errors.Telefono = 'El número de teléfono es obligatorio';
+            errorMessage += '• El número de teléfono no puede estar vacío\n';
+        } else if (!phoneRegex.test(formData.Telefono.replace(/\s+/g, ''))) {
+            errors.Telefono = 'Ingrese un número de teléfono válido (10 dígitos)';
+            errorMessage += '• Ingrese un número de teléfono válido (10 dígitos)\n';
+        }
+
+        // Address validation (ensures at least some meaningful content)
+        const addressRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s#\-.,]+$/;
         if (!formData.Direccion || formData.Direccion.trim() === '') {
             errors.Direccion = 'La dirección es obligatoria';
+            errorMessage += '• La dirección no puede estar vacía\n';
+        } else if (formData.Direccion.trim().length < 5) {
+            errors.Direccion = 'Ingrese una dirección válida';
+            errorMessage += '• Ingrese una dirección válida (mínimo 5 caracteres)\n';
+        } else if (!addressRegex.test(formData.Direccion)) {
+            errors.Direccion = 'La dirección contiene caracteres no válidos';
+            errorMessage += '• La dirección contiene caracteres no válidos\n';
         }
 
-        // Password validation (optional)
+        // Password validation (optional, only if changing password)
         if (formData.Contrasena || formData.CurrentPassword) {
             // If either password field is filled, both must be filled
             if (!formData.Contrasena) {
                 errors.Contrasena = 'Debe ingresar una nueva contraseña';
+                errorMessage += '• Debe ingresar una nueva contraseña\n';
             }
             if (!formData.CurrentPassword) {
                 errors.CurrentPassword = 'Debe ingresar su contraseña actual';
+                errorMessage += '• Debe ingresar su contraseña actual\n';
             }
+
             // Optional: Add password strength check
-            if (formData.Contrasena && formData.Contrasena.length < 6) {
-                errors.Contrasena = 'La contraseña debe tener al menos 6 caracteres';
+            if (formData.Contrasena && formData.Contrasena.length < 8) {
+                errors.Contrasena = 'La contraseña debe tener al menos 8 caracteres';
+                errorMessage += '• La contraseña debe tener al menos 8 caracteres\n';
             }
         }
 
+        // Add error highlighting to form
         setValidationErrors(errors);
-        return Object.keys(errors).length === 0;
+
+        // If there are errors, show alert and prevent form submission
+        if (Object.keys(errors).length > 0) {
+            alert(errorMessage);
+            return false;
+        }
+
+        return true;
     };
 
     const handleSubmit = async (e) => {
@@ -157,9 +186,30 @@ const UserProfile = () => {
                     Telefono: formData.Telefono,
                     Direccion: formData.Direccion
                 }));
+
+                // Optional: Reset password fields after successful update
+                setFormData(prevState => ({
+                    ...prevState,
+                    Contrasena: '',
+                    CurrentPassword: ''
+                }));
             }
         } catch (err) {
-            setError('Error al actualizar los datos del usuario');
+            // Handle specific error responses
+            if (err.response) {
+                // The request was made and the server responded with a status code
+                const errorMessage = err.response.data.message || 'Error al actualizar los datos del usuario';
+                setError(errorMessage);
+                alert(errorMessage);
+            } else if (err.request) {
+                // The request was made but no response was received
+                setError('No se recibió respuesta del servidor');
+                alert('No se recibió respuesta del servidor');
+            } else {
+                // Something happened in setting up the request
+                setError('Error al procesar la solicitud');
+                alert('Error al procesar la solicitud');
+            }
         }
     };
 
@@ -336,7 +386,7 @@ const UserProfile = () => {
                     {renderUserProfile()}
                 </CashierLayout>
             );
-        } else if (profile.Rol === 'Cliente'){
+        } else if (profile.Rol === 'Cliente') {
             return (
                 <div>
                     <header className="bg-gray-800 py-4 shadow-md w-full">
